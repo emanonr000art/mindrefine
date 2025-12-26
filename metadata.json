@@ -1,0 +1,7 @@
+{
+  "name": "MindRefine - Counselor Deliberate Practice",
+  "description": "A deliberate practice tool for mental health professionals to sharpen their counseling skills through AI-generated client scenarios and competency-based feedback.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
