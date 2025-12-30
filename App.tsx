@@ -3,11 +3,11 @@ import { AppState, ClientScenario, Feedback, FocusArea, Language } from './types
 import { generateNewScenario, evaluateResponse, transcribeAudio } from './geminiService';
 import ScenarioCard from './components/ScenarioCard';
 import FeedbackPanel from './components/FeedbackPanel';
-import { Sparkles, Brain, BookOpen, Send, Loader2, Mic, Square, Target, ChevronLeft, Globe, MessageSquare, ShieldAlert, Heart, ClipboardCheck, Trash2 } from 'lucide-react';
+import { Sparkles, Brain, BookOpen, Send, Loader2, Mic, Square, Target, ChevronLeft, Globe, MessageSquare, ShieldAlert, Heart, ClipboardCheck, Trash2, DoorOpen, Coffee, ArrowRightLeft } from 'lucide-react';
 
 interface FocusAreaItem {
   id: FocusArea;
-  category: 'microskills' | 'relationship' | 'situational';
+  category: 'microskills' | 'relationship' | 'process' | 'situational';
   translations: Record<Language, { title: string; desc: string }>;
   icon: React.ReactNode;
 }
@@ -17,8 +17,14 @@ const FOCUS_AREAS: FocusAreaItem[] = [
   { id: 'Content Reflection', category: 'microskills', translations: { en: { title: 'Content Reflection', desc: 'Paraphrase core message.' }, zh: { title: '内容反映', desc: '对咨询内容进行反映与释义。' } }, icon: <MessageSquare size={18} /> },
   { id: 'Questioning Skills', category: 'microskills', translations: { en: { title: 'Questioning Skills', desc: 'Open/closed questions.' }, zh: { title: '提问技术', desc: '合理使用提问并取得平衡。' } }, icon: <Target size={18} /> },
   { id: 'Summarizing', category: 'microskills', translations: { en: { title: 'Summarizing', desc: 'Synthesize milestones.' }, zh: { title: '总结技术', desc: '归纳总结咨询内容与计划。' } }, icon: <ClipboardCheck size={18} /> },
+  
   { id: 'Empathy', category: 'relationship', translations: { en: { title: 'Empathy', desc: 'Communicating understanding.' }, zh: { title: '共情能力', desc: '深入体验内心世界并反馈。' } }, icon: <Brain size={18} /> },
   { id: 'Genuineness', category: 'relationship', translations: { en: { title: 'Genuineness', desc: 'Be yourself without masks.' }, zh: { title: '真诚一致', desc: '真实可信，表里如一。' } }, icon: <Brain size={18} /> },
+  
+  { id: 'Initial Interview', category: 'process', translations: { en: { title: 'Initial Interview', desc: 'Rapport and assessment.' }, zh: { title: '首次会谈', desc: '建立关系、知情同意与评估。' } }, icon: <Coffee size={18} /> },
+  { id: 'Referral', category: 'process', translations: { en: { title: 'Referral', desc: 'Professional transition.' }, zh: { title: '转介处理', desc: '评估匹配、沟通局限与交接。' } }, icon: <ArrowRightLeft size={18} /> },
+  { id: 'Termination', category: 'process', translations: { en: { title: 'Termination', desc: 'Consolidation and ending.' }, zh: { title: '结案阶段', desc: '巩固成效、处理分离与告别。' } }, icon: <DoorOpen size={18} /> },
+
   { id: 'Working with Resistance', category: 'situational', translations: { en: { title: 'Managing Resistance', desc: 'Navigate pushback.' }, zh: { title: '处理阻抗', desc: '应对抵触或缺乏投入。' } }, icon: <ShieldAlert size={18} /> },
   { id: 'Crisis Intervention', category: 'situational', translations: { en: { title: 'Crisis Intervention', desc: 'Handle high-risk moments.' }, zh: { title: '危机干预', desc: '管理高风险时刻的应对。' } }, icon: <ShieldAlert size={18} /> },
 ];
@@ -28,7 +34,7 @@ const TRANSLATIONS: Record<Language, any> = {
     heroTitle: 'MindRefine',
     heroDesc: 'Professional Counseling Deliberate Practice',
     startBtn: 'Start Practice',
-    categories: { microskills: 'Microskills', relationship: 'Relationship', situational: 'Situational' },
+    categories: { microskills: 'Microskills', relationship: 'Relationship', process: 'Clinical Process', situational: 'Situational' },
     back: 'Back',
     sessions: 'Sessions',
     focusOn: 'Focus:',
@@ -39,13 +45,24 @@ const TRANSLATIONS: Record<Language, any> = {
     analyzing: 'Evaluating...',
     feedbackTitle: 'Supervisory Feedback',
     nextScenario: 'Next',
-    improveResponse: 'Try Again'
+    improveResponse: 'Try Again',
+    evaluationResult: 'Evaluation Result',
+    points: 'pts',
+    metrics: {
+      empathy: 'Empathy',
+      reflection: 'Reflection',
+      microSkills: 'Micro-Skills',
+      professionalism: 'Professionalism'
+    },
+    strengths: 'Strengths',
+    growthAreas: 'Growth Areas',
+    refinedResponse: 'Supervisory Demo'
   },
   zh: {
     heroTitle: 'MindRefine',
     heroDesc: '心理咨询师临床刻意练习',
     startBtn: '开始练习',
-    categories: { microskills: '临床微技能', relationship: '咨访关系', situational: '特殊情境' },
+    categories: { microskills: '临床微技能', relationship: '咨访关系', process: '临床过程', situational: '特殊情境' },
     back: '返回',
     sessions: '练习',
     focusOn: '重点:',
@@ -56,7 +73,18 @@ const TRANSLATIONS: Record<Language, any> = {
     analyzing: '督导分析中...',
     feedbackTitle: '临床督导反馈',
     nextScenario: '下一题',
-    improveResponse: '重新回应'
+    improveResponse: '重新回应',
+    evaluationResult: '评估结果',
+    points: '分',
+    metrics: {
+      empathy: '共情理解',
+      reflection: '反应技术',
+      microSkills: '临床微技能',
+      professionalism: '专业表现'
+    },
+    strengths: '优势表现',
+    growthAreas: '改进建议',
+    refinedResponse: '专家示教'
   }
 };
 
@@ -70,7 +98,6 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [historyCount, setHistoryCount] = useState(0);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -139,12 +166,10 @@ const App: React.FC = () => {
     try {
       const res = await evaluateResponse(currentScenario, userResponse, language);
       setFeedback(res);
-      setHistoryCount(h => h + 1);
       setAppState(AppState.RESULTS);
     } finally { setIsLoading(false); }
   };
 
-  // UI Components
   const MobileHeader = ({ title, showBack }: { title: string, showBack?: boolean }) => (
     <div className="bg-white border-b border-slate-100 sticky top-0 z-50 pt-[env(safe-area-inset-top)]">
       <div className="h-14 px-4 flex items-center justify-between">
@@ -192,8 +217,8 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col">
         <MobileHeader title={language === 'zh' ? '选择练习' : 'Select Practice'} />
-        <div className="flex-1 p-4 space-y-6 pb-20">
-          {['microskills', 'relationship', 'situational'].map(cat => (
+        <div className="flex-1 p-4 space-y-6 pb-20 overflow-y-auto">
+          {['microskills', 'relationship', 'process', 'situational'].map(cat => (
             <div key={cat} className="space-y-3">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">{t.categories[cat]}</h3>
               <div className="grid grid-cols-2 gap-3">
@@ -242,7 +267,6 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Floating Action Bar */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-lg border-t border-slate-100 pb-safe">
           <div className="max-w-md mx-auto flex items-center gap-3">
             <button 
@@ -275,19 +299,21 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col">
         <MobileHeader title={t.feedbackTitle} showBack />
-        <div className="flex-1 p-4 space-y-6 pb-20">
+        <div className="flex-1 p-4 space-y-6 pb-20 overflow-y-auto">
           <FeedbackPanel 
             feedback={feedback}
             onRetry={() => { setAppState(AppState.PRACTICE); setFeedback(null); }}
             onNext={() => startNewPractice(selectedFocus || 'Empathy')}
             labels={{
               title: t.feedbackTitle,
-              metrics: TRANSLATIONS[language].metrics,
-              strengths: language === 'zh' ? '优点' : 'Strengths',
-              growthAreas: language === 'zh' ? '建议' : 'Growth',
-              refinedResponse: language === 'zh' ? '示范' : 'Refined',
+              metrics: t.metrics,
+              strengths: t.strengths,
+              growthAreas: t.growthAreas,
+              refinedResponse: t.refinedResponse,
               nextScenario: t.nextScenario,
-              improveResponse: t.improveResponse
+              improveResponse: t.improveResponse,
+              evaluationResult: t.evaluationResult,
+              points: t.points
             }}
           />
         </div>

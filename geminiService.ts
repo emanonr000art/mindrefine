@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { ClientScenario, Feedback, FocusArea, Language } from "./types";
 
@@ -33,7 +32,8 @@ const FEEDBACK_SCHEMA = {
         reflectiveListening: { type: Type.NUMBER },
         microSkills: { type: Type.NUMBER },
         professionalism: { type: Type.NUMBER },
-      }
+      },
+      required: ["empathy", "reflectiveListening", "microSkills", "professionalism"]
     },
     revisedResponse: { type: Type.STRING },
     explanation: { type: Type.STRING },
@@ -41,36 +41,92 @@ const FEEDBACK_SCHEMA = {
   required: ["score", "strengths", "growthAreas", "competencyAnalysis", "revisedResponse", "explanation"]
 };
 
+// 临床胜任力定义
 const COMPETENCY_DEFINITIONS: Record<string, string> = {
-  'Empathy': "Empathy (共情): Experiencing the client's inner world, understanding the link between experience and personality, and communicating this back. (体验别人内心世界、把握经历与人格联系、传达反馈)",
-  'Emotional Reflection': "Emotional Reflection (情感反映): Accurately identifying and reflecting the client's emotional state to help them feel understood and validated. (对来访者状况进行评估并反馈情绪)",
-  'Content Reflection': "Content Reflection (内容反映): Paraphrasing and restating the client's core message to ensure mutual understanding. (对咨询内容进行反映、复述以及释义)",
-  'Confrontation': "Confrontation (面质): Highlighting inconsistencies in the client's speech or behavior to foster insight. (提出质疑帮助其认识不一致之处)",
-  'Unconditional Positive Regard': "Unconditional Positive Regard (无条件积极关注): Accepting the client as a whole without judgment, regardless of behavior. (整体接纳，不依据行为好坏评判)",
-  'Genuineness': "Genuineness (真诚一致): Being real and authentic without a professional mask. (以真正的我出现，表里一致)",
-  'Self-Awareness': "Self-Awareness (自我觉察): Constantly evaluating one's own motivations, values, and traits during the session. (对自己的动机、价值取向进行评估)",
-  'Questioning Skills': "Questioning Skills (提问技术): Balancing open and closed questions effectively. (合理使用开放式和封闭式提问)",
-  'Summarizing': "Summarizing (总结技术): Synthesizing content, feelings, and future plans. (归纳总结咨询内容、情感与计划)",
-  'Crisis Intervention': "Crisis Intervention (危机干预): Identifying and managing acute distress or high-risk situations professionally. (运用实证模型处理特殊、紧急情况)",
-  'Working with Resistance': "Working with Resistance (处理阻抗): Navigating pushback or lack of engagement with empathy and control. (应对求助者的抵触、推诿或缺乏投入)",
-  'Case Conceptualization': "Case Conceptualization (个案概念化): Integrating theory, assessment, and info into a clear clinical picture. (结合理论、测验与信息对个案进行准确概念化)",
+  'Empathy': "Empathy (共情): Experiencing the client's inner world and communicating understanding.",
+  'Emotional Reflection': "Emotional Reflection (情感反映): Accurately identifying and reflecting the client's emotional state.",
+  'Content Reflection': "Content Reflection (内容反映): Paraphrasing and restating the client's core message.",
+  'Confrontation': "Confrontation (面质): Highlighting inconsistencies in the client's speech or behavior.",
+  'Unconditional Positive Regard': "Unconditional Positive Regard (无条件积极关注): Accepting the client as a whole without judgment.",
+  'Genuineness': "Genuineness (真诚一致): Being real and authentic without a professional mask.",
+  'Self-Awareness': "Self-Awareness (自我觉察): Evaluating one's own motivations and values.",
+  'Questioning Skills': "Questioning Skills (提问技术): Balancing open and closed questions.",
+  'Summarizing': "Summarizing (总结技术): Synthesizing content, feelings, and future plans.",
+  'Crisis Intervention': "Crisis Intervention (危机干预): Identifying and managing acute distress or high-risk situations.",
+  'Working with Resistance': "Working with Resistance (处理阻抗): Navigating pushback with empathy.",
+  'Initial Interview': "Initial Interview (首次会谈): Establishing rapport, intake assessment, explaining boundaries, and managing first-session anxiety.",
+  'Referral': "Referral (转介): Recognizing professional limitations, explaining the need for transition, and managing the client's potential feeling of rejection.",
+  'Termination': "Termination (结案阶段): Consolidation of clinical gains, processing separation/loss, and planning for the future.",
+  'Case Conceptualization': "Case Conceptualization (个案概念化): Integrating theory and info into a clinical picture.",
+};
+
+// 增加个案多样性的维度
+const CLINICAL_DIVERSITY_POOL = {
+  issues: [
+    "Existential dread (existence, death, meaninglessness)",
+    "Complicated grief and hidden loss",
+    "Complex trauma (C-PTSD) related to attachment",
+    "Identity exploration (gender, career, self-worth)",
+    "Somatization (physical symptoms without medical cause)",
+    "Postnatal emotional struggles / Parenting identity crisis",
+    "Elder loneliness and integrity vs. despair",
+    "Interpersonal sensitivity and social anxiety",
+    "Impulse control and emotional dysregulation",
+    "Success neurosis or fear of failure"
+  ],
+  personalityLevels: [
+    "Neurotic Level (High functioning, integrated ego, internal conflicts)",
+    "Borderline Personality Traits (Emotional instability, splitting, abandonment fears)",
+    "Narcissistic Vulnerability (Fragile self-esteem, defensive grandiosity)",
+    "Avoidant/Dependent patterns (Severe interpersonal inhibition)",
+    "Obsessive-Compulsive Personality style (Rigidity, intellectualization)"
+  ],
+  socioContexts: [
+    "High-SES professional facing spiritual emptiness",
+    "Low-income individual facing systemic oppression and survival stress",
+    "Academic high-achiever with 'gifted child' syndrome",
+    "Empty-nest elderly person",
+    "LGBTQ+ individual navigating social stigma",
+    "Artistic personality struggling with creative blocks"
+  ]
 };
 
 export async function generateNewScenario(focusArea: FocusArea, language: Language): Promise<ClientScenario> {
-  const culturalContext = language === 'zh' 
-    ? "The scenario must reflect a Chinese cultural background (e.g., family-centric values, academic pressure like Gaokao, or high-intensity workplace social norms). The output must be in Chinese."
-    : "The scenario must reflect a Western/English-speaking cultural background (e.g., individualism, direct communication styles). The output must be in English.";
+  const languageName = language === 'zh' ? 'Chinese (Mandarin)' : 'English';
+  
+  const randomIssue = CLINICAL_DIVERSITY_POOL.issues[Math.floor(Math.random() * CLINICAL_DIVERSITY_POOL.issues.length)];
+  const randomLevel = CLINICAL_DIVERSITY_POOL.personalityLevels[Math.floor(Math.random() * CLINICAL_DIVERSITY_POOL.personalityLevels.length)];
+  const randomContext = CLINICAL_DIVERSITY_POOL.socioContexts[Math.floor(Math.random() * CLINICAL_DIVERSITY_POOL.socioContexts.length)];
 
-  const prompt = `Generate a realistic psychological counseling client scenario for deliberate practice. 
-  The focus of this practice session is: "${focusArea}". 
-  Definition Context: ${COMPETENCY_DEFINITIONS[focusArea] || 'General professional counseling competency.'}
-  ${culturalContext}
-  The scenario should include a specific verbal statement from the client that tests the counselor's ability in this specific area. 
-  Ensure the non-verbal cues (body posture, tone, etc.) provide depth to the emotional state.`;
+  // Adjust prompt for specific clinical process stages
+  let stageModifier = "";
+  if (focusArea === 'Initial Interview') stageModifier = "The session is the VERY FIRST meeting. The client might be anxious, guarded, or unsure about the process.";
+  if (focusArea === 'Referral') stageModifier = "The counselor has decided they are not the best fit (due to scope of practice) and needs to suggest a referral. The client's statement should reflect a need that is outside the counselor's competence.";
+  if (focusArea === 'Termination') stageModifier = "This is the FINAL session. The client might feel loss, gratitude, or anxiety about 'going it alone'.";
 
-  // Use 'gemini-3-flash-preview' for basic generation tasks.
+  const prompt = `
+    TASK: Generate a UNIQUE and DEEP psychological counseling scenario.
+    TARGET LANGUAGE: ${languageName}
+    STRICT LANGUAGE ENFORCEMENT: ALL content in the JSON must be in ${languageName}.
+
+    CLINICAL DIMENSIONS:
+    1. Focus Skill/Stage: ${focusArea} (${COMPETENCY_DEFINITIONS[focusArea] || ''})
+    2. Core Issue: ${randomIssue}
+    3. Personality Level: ${randomLevel}
+    4. Social Context: ${randomContext}
+    
+    ${stageModifier}
+
+    REQUIREMENTS:
+    - BACKGROUND: Provide a "thick" clinical history including family dynamics and psychological defense mechanisms.
+    - PRESENTING PROBLEM: A nuanced description of why they are here.
+    - NON-VERBAL CUES: Subtle indicators of internal state.
+    - STATEMENT: A challenging quote from the client that specifically requires the counselor to use "${focusArea}". 
+    - AVOID CLICHÉS.
+  `;
+
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3-pro-preview",
     contents: prompt,
     config: {
       responseMimeType: "application/json",
@@ -87,40 +143,35 @@ export async function evaluateResponse(
   userResponse: string,
   language: Language
 ): Promise<Feedback> {
+  const languageName = language === 'zh' ? 'Chinese (Mandarin)' : 'English';
   const focusArea = scenario.focusArea as FocusArea;
   const focusAreaContext = focusArea ? `The focus of this exercise is: ${focusArea}. Definition: ${COMPETENCY_DEFINITIONS[focusArea] || ''}` : "";
-  const languageContext = language === 'zh' 
-    ? "Return the feedback, strengths, growth areas, and revised response in Chinese."
-    : "Return the feedback, strengths, growth areas, and revised response in English.";
+  
+  const instruction = language === 'zh' 
+    ? "STRICTLY output ALL fields in Simplified Chinese. NO ENGLISH ALLOWED in the text content."
+    : "STRICTLY output ALL fields in English.";
 
   const prompt = `
     ACT AS AN EXPERT CLINICAL SUPERVISOR.
-    Evaluate the counselor's response based on professional clinical competency standards and cultural sensitivity for a ${language === 'zh' ? 'Chinese' : 'Western'} context.
+    TARGET LANGUAGE: ${languageName}
+    ${instruction}
 
-    SPECIFIC COMPETENCY FOCUS:
-    ${focusAreaContext}
+    Evaluate the counselor's response. 
+    Client Context: ${scenario.background}
+    Skill Focus: ${focusAreaContext}
 
-    ${languageContext}
-
-    CLIENT SCENARIO:
-    - Name: ${scenario.name} (${scenario.age} years old)
-    - Background: ${scenario.background}
-    - Non-verbal cues: ${scenario.nonVerbalCues}
-    - Client said: "${scenario.statement}"
-
-    COUNSELOR'S RESPONSE:
-    "${userResponse}"
+    CLIENT SAID: "${scenario.statement}"
+    COUNSELOR'S RESPONSE: "${userResponse}"
 
     Evaluation Criteria (Scores 0-100):
     1. Empathy (共情): Depth of emotional understanding.
     2. Reflection (反应): Accuracy of content/feeling reflection.
-    3. Micro-skills (微技能): Technical execution (questioning, silence, etc).
-    4. Professionalism (专业性): Ethical stance and professional tone.
+    3. Micro-skills (微技能): Technical execution (esp. related to ${focusArea}).
+    4. Professionalism (专业性): Ethical stance and tone.
 
-    Provide a gold-standard revised response that demonstrates excellence in ${focusArea}.
+    Provide a gold-standard revised response and explanation in ${languageName}.
   `;
 
-  // Use 'gemini-3-pro-preview' for complex clinical reasoning tasks.
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
     contents: prompt,
@@ -134,9 +185,8 @@ export async function evaluateResponse(
 }
 
 export async function transcribeAudio(base64Audio: string, mimeType: string, language: Language): Promise<string> {
-  const langPrompt = language === 'zh' 
-    ? "Transcription task: Convert the provided Chinese audio to Chinese Simplified text. Provide a verbatim transcription. Do not summarize or add notes. Output only the text spoken."
-    : "Transcription task: Convert the provided English audio to English text. Provide a verbatim transcription. Do not summarize or add notes. Output only the text spoken.";
+  const languageName = language === 'zh' ? 'Chinese' : 'English';
+  const langPrompt = `Transcription task: Convert the provided ${languageName} audio to text verbatim.`;
 
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",

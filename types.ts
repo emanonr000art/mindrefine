@@ -1,4 +1,3 @@
-
 export type Language = 'en' | 'zh';
 
 export interface ClientScenario {
@@ -29,18 +28,22 @@ export interface Feedback {
 }
 
 export type FocusArea = 
-  // 2.3 咨询技术 (Microskills)
+  // 咨询技术 (Microskills)
   | 'Emotional Reflection' 
   | 'Content Reflection' 
   | 'Questioning Skills' 
   | 'Summarizing' 
   | 'Confrontation'
-  // 3 & 4 鉴别性胜任力与人格特质 (Relationship & Traits)
+  // 胜任力与特质 (Relationship & Traits)
   | 'Empathy' 
   | 'Unconditional Positive Regard' 
   | 'Genuineness' 
   | 'Self-Awareness'
-  // 2.2 & 6 干预与动机 (Advanced/Situational)
+  // 临床过程 (Clinical Process)
+  | 'Initial Interview'
+  | 'Referral'
+  | 'Termination'
+  // 干预与动机 (Advanced/Situational)
   | 'Working with Resistance'
   | 'Crisis Intervention'
   | 'Case Conceptualization'

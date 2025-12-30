@@ -14,15 +14,32 @@ interface FeedbackPanelProps {
     refinedResponse: string;
     nextScenario: string;
     improveResponse: string;
+    evaluationResult: string;
+    points: string;
   };
 }
 
 const FeedbackPanel: React.FC<FeedbackPanelProps> = ({ feedback, onRetry, onNext, labels }) => {
+  // Defensive checks to prevent "Cannot read properties of undefined"
+  const safeMetrics = feedback.competencyAnalysis || {
+    empathy: 0,
+    reflectiveListening: 0,
+    microSkills: 0,
+    professionalism: 0
+  };
+
+  const safeLabels = labels.metrics || {
+    empathy: 'Empathy',
+    reflection: 'Reflection',
+    microSkills: 'Micro-Skills',
+    professionalism: 'Professionalism'
+  };
+
   const metrics = [
-    { label: labels.metrics.empathy, value: feedback.competencyAnalysis.empathy, color: 'bg-rose-500' },
-    { label: labels.metrics.reflection, value: feedback.competencyAnalysis.reflectiveListening, color: 'bg-indigo-500' },
-    { label: labels.metrics.microSkills, value: feedback.competencyAnalysis.microSkills, color: 'bg-amber-500' },
-    { label: labels.metrics.professionalism, value: feedback.competencyAnalysis.professionalism, color: 'bg-emerald-500' },
+    { label: safeLabels.empathy, value: safeMetrics.empathy, color: 'bg-rose-500' },
+    { label: safeLabels.reflection, value: safeMetrics.reflectiveListening, color: 'bg-indigo-500' },
+    { label: safeLabels.microSkills, value: safeMetrics.microSkills, color: 'bg-amber-500' },
+    { label: safeLabels.professionalism, value: safeMetrics.professionalism, color: 'bg-emerald-500' },
   ];
 
   return (
@@ -32,11 +49,11 @@ const FeedbackPanel: React.FC<FeedbackPanelProps> = ({ feedback, onRetry, onNext
           <Award className="text-amber-500" size={28} />
           <div>
             <h3 className="text-lg font-bold text-slate-800 leading-tight">{labels.title}</h3>
-            <p className="text-xs text-slate-400 font-medium">Evaluation Result</p>
+            <p className="text-xs text-slate-400 font-medium">{labels.evaluationResult}</p>
           </div>
         </div>
         <div className="text-2xl font-black text-indigo-600 tabular-nums">
-          {feedback.score}<span className="text-xs text-slate-300 ml-1">pts</span>
+          {feedback.score}<span className="text-xs text-slate-300 ml-1">{labels.points}</span>
         </div>
       </div>
 
@@ -62,9 +79,9 @@ const FeedbackPanel: React.FC<FeedbackPanelProps> = ({ feedback, onRetry, onNext
           <Lightbulb size={20} className="text-indigo-200" />
           <h4 className="font-bold text-sm tracking-wide">{labels.refinedResponse}</h4>
         </div>
-        <p className="serif text-lg leading-relaxed italic opacity-95">"{feedback.revisedResponse}"</p>
+        <p className="serif text-lg leading-relaxed italic opacity-95">"{feedback.revisedResponse || '...'}"</p>
         <p className="text-xs text-indigo-100/70 border-t border-white/10 pt-3 leading-relaxed">
-          {feedback.explanation}
+          {feedback.explanation || ''}
         </p>
       </div>
 
@@ -75,7 +92,7 @@ const FeedbackPanel: React.FC<FeedbackPanelProps> = ({ feedback, onRetry, onNext
             {labels.strengths}
           </h4>
           <div className="space-y-2">
-            {feedback.strengths.slice(0, 2).map((s, i) => (
+            {(feedback.strengths || []).slice(0, 3).map((s, i) => (
               <p key={i} className="text-sm text-slate-600 flex items-start gap-2">
                 <span className="mt-1.5 w-1 h-1 bg-emerald-500 rounded-full shrink-0" />
                 {s}
@@ -90,7 +107,7 @@ const FeedbackPanel: React.FC<FeedbackPanelProps> = ({ feedback, onRetry, onNext
             {labels.growthAreas}
           </h4>
           <div className="space-y-2">
-            {feedback.growthAreas.slice(0, 2).map((g, i) => (
+            {(feedback.growthAreas || []).slice(0, 3).map((g, i) => (
               <p key={i} className="text-sm text-slate-600 flex items-start gap-2">
                 <span className="mt-1.5 w-1 h-1 bg-amber-500 rounded-full shrink-0" />
                 {g}
