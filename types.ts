@@ -1,5 +1,11 @@
 export type Language = 'en' | 'zh';
 
+export interface ChatMessage {
+  role: 'client' | 'counselor';
+  text: string;
+  nonVerbal?: string;
+}
+
 export interface ClientScenario {
   id: string;
   name: string;
@@ -7,7 +13,7 @@ export interface ClientScenario {
   background: string;
   presentingProblem: string;
   nonVerbalCues: string;
-  statement: string;
+  statement: string; // 初始陈述
   theoreticalOrientation: string;
   focusArea?: string;
   language?: Language;
@@ -23,31 +29,31 @@ export interface Feedback {
     microSkills: number;
     professionalism: number;
   };
-  revisedResponse: string;
+  revisedResponse: string; // 专家示教（针对最后一轮或整体轨迹）
   explanation: string;
+  interactionAnalysis?: string; // 会话脉络分析
 }
 
 export type FocusArea = 
-  // 咨询技术 (Microskills)
+  // 情绪聚焦疗法 (EFT Focus)
+  | 'EFT - Empathic Validation'
+  | 'EFT - Evocative Responding'
+  | 'EFT - Deepening Emotion'
+  | 'EFT - Marker Identification'
+  // 临床基础 (Microskills)
   | 'Emotional Reflection' 
-  | 'Content Reflection' 
-  | 'Questioning Skills' 
-  | 'Summarizing' 
-  | 'Confrontation'
-  // 胜任力与特质 (Relationship & Traits)
-  | 'Empathy' 
-  | 'Unconditional Positive Regard' 
-  | 'Genuineness' 
-  | 'Self-Awareness'
+  | 'Content Reflection'
+  | 'Questioning Skills'
+  | 'Summarizing'
   // 临床过程 (Clinical Process)
   | 'Initial Interview'
   | 'Referral'
   | 'Termination'
-  // 干预与动机 (Advanced/Situational)
+  // 特殊情境 (Situational)
   | 'Working with Resistance'
   | 'Crisis Intervention'
   | 'Case Conceptualization'
-  | 'Goal Setting';
+  | 'Empathy';
 
 export enum AppState {
   HOME = 'HOME',
