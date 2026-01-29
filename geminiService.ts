@@ -160,9 +160,14 @@ export async function transcribeAudio(base64Audio: string, mimeType: string, lan
     contents: {
       parts: [
         { inlineData: { mimeType, data: base64Audio } },
-        { text: "Verbatim transcription." },
+        { text: "Output ONLY the verbatim transcription of this audio. Do not include any preambles, introductory sentences, or filler words like 'Here is the transcription'. Output should only be the recognized text." },
       ],
     },
   });
-  return response.text?.trim() || "";
+  
+  // Clean up potential conversational filler just in case
+  let text = response.text?.trim() || "";
+  text = text.replace(/^Here is the verbatim transcription.*?:/i, "").trim();
+  text = text.replace(/^以下是该音频的文字转录内容.*?:/i, "").trim();
+  return text;
 }
