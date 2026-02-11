@@ -80,7 +80,7 @@ export async function generateNewScenario(focusArea: FocusArea, language: Langua
     If focus is EFT, ensure a visible clinical marker.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-pro-preview",
+    model: "gemini-2.5-flash",
     contents: prompt,
     config: { responseMimeType: "application/json", responseSchema: SCENARIO_SCHEMA }
   });
@@ -110,7 +110,7 @@ export async function getNextClientTurn(
   `;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-2.5-flash",
     contents: prompt,
     config: { responseMimeType: "application/json", responseSchema: NEXT_TURN_SCHEMA }
   });
@@ -146,7 +146,7 @@ export async function evaluateFullDialogue(
   `;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-pro-preview",
+    model: "gemini-2.5-flash",
     contents: prompt,
     config: { responseMimeType: "application/json", responseSchema: FEEDBACK_SCHEMA }
   });
@@ -156,7 +156,7 @@ export async function evaluateFullDialogue(
 
 export async function transcribeAudio(base64Audio: string, mimeType: string, language: Language): Promise<string> {
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-2.5-flash",
     contents: {
       parts: [
         { inlineData: { mimeType, data: base64Audio } },
